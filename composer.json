@@ -1,0 +1,29 @@
+{
+    "name": "scholar/local-foundation",
+    "description": "S.C.H.O.L.A.R. local development foundation",
+    "type": "project",
+    "license": "proprietary",
+    "require": {
+        "php": "8.5.*",
+        "ext-mbstring": "*",
+        "ext-pdo": "*",
+        "ext-pdo_mysql": "*",
+        "robmorgan/phinx": "^0.16",
+        "smalot/pdfparser": "^2.13",
+        "vlucas/phpdotenv": "^5.6"
+    },
+    "autoload": {
+        "psr-4": {
+            "Scholar\\Auth\\": "app/auth/",
+            "Scholar\\Theses\\": "app/theses/",
+            "Scholar\\": "app/"
+        }
+    },
+    "config": {
+        "sort-packages": true,
+        "allow-plugins": false,
+        "platform": {
+            "php": "8.5.12"
+        }
+    }
+}

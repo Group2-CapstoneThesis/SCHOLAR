@@ -1,0 +1,3 @@
+Options -Indexes
+Require local
+DirectoryIndex index.php
