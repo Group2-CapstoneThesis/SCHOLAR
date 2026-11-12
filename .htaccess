@@ -1,0 +1,7 @@
+# the project root must never be served: only public/ is a website (scholar.localhost / scholar.test point there).
+# Laragon's default "localhost" site serves all of C:/laragon/www, which would otherwise expose .env (database
+# password, OpenRouter key), storage/ (thesis PDFs, the two-factor key, logs), app/, config/ and vendor/ at
+# http://localhost/scholar/... — so everything below this folder is refused here.
+# public/.htaccess has its own "Require", which replaces this one for public/ only (Apache's default AuthMerging Off).
+Options -Indexes
+Require all denied

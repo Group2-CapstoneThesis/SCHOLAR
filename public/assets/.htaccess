@@ -1,0 +1,5 @@
+# public/assets holds pieces of pages (the RDPO sidebar) and, later, files such as styles or images.
+# The PHP pieces only work inside a page, so the browser may never open them on their own.
+<FilesMatch "\.php$">
+    Require all denied
+</FilesMatch>

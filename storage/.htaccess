@@ -1,0 +1,5 @@
+# second lock on the private storage folder (thesis PDFs, pending uploads, backups, sessions, logs, keys):
+# Apache must never serve anything here, whatever site or folder alias points at it.
+# Thesis PDFs reach RDPO only through public/admin_thesis_pdf.php, which checks the login and the thesis.view_pdf permission.
+Options -Indexes
+Require all denied
