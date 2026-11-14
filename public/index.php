@@ -1,7 +1,6 @@
 <?php
 declare(strict_types=1); // keep typed values strict
 
-use Scholar\Search\QueryInterpreter;
 use Scholar\Search\SearchIndex;
 use Scholar\SiteVisits;
 use Scholar\Theses\Campuses;
@@ -26,65 +25,8 @@ $filters = ThesisSearch::filtersFromQuery($_GET, false); // false = public mode,
 // with words typed, the search is hybrid: word matches plus records close in meaning (M14);
 // SearchIndex::create() is null when semantic search is switched off in .env, which leaves the word search
 $search = new ThesisSearch($pdo, SearchIndex::create($pdo));
+$results = $search->search($filters, false);
 $filterOptions = $search->filterOptions(false);
-
-// a search typed as a sentence ("research conducted by IT", "find me a research related to flood monitoring") is turned
-// into its topic plus the same filters the dropdowns offer (QueryInterpreter); $filters keeps exactly what the visitor typed
-// (for the search box, page links and the AI), $searchFilters is what is actually searched.
-// ?exact=1 ("Search your exact words instead") skips the interpretation
-$exactWords = isset($_GET['exact']) && $_GET['exact'] === '1';
-$searchFilters = $filters;
-$interpretation = null;
-if ($filters['q'] !== '' && !$exactWords) {
-    $interpretation = QueryInterpreter::interpret($filters['q'], $filterOptions['programs']);
-    if ($interpretation['changed']) {
-        $searchFilters['q'] = $interpretation['topic'];
-        // a dropdown the visitor set themselves always wins over what the sentence says
-        if ($filters['program'] === '' && $interpretation['program'] !== null) {
-            $searchFilters['program'] = $interpretation['program'];
-        }
-        if ($filters['year'] === null && $interpretation['year'] !== null) {
-            $searchFilters['year'] = $interpretation['year'];
-        }
-        if ($filters['campus'] === '' && $interpretation['campus'] !== null) {
-            $searchFilters['campus'] = $interpretation['campus'];
-        }
-        if (!isset($_GET['sort']) && $interpretation['sort'] !== null) {
-            $searchFilters['sort'] = $interpretation['sort'];
-        }
-        // nothing left to search for by words ("research conducted by IT"): list the filtered records, newest first
-        if ($searchFilters['q'] === '' && $searchFilters['sort'] === 'relevance') {
-            $searchFilters['sort'] = 'newest';
-        }
-    } else {
-        $interpretation = null;
-    }
-}
-$results = $search->search($searchFilters, false);
-
-// "Topic: flood monitoring · Program: BS Information Technology" - shown above the results when a sentence was interpreted
-$understoodParts = [];
-if ($interpretation !== null) {
-    if ($searchFilters['q'] !== '') {
-        $understoodParts[] = ['Topic', $searchFilters['q']];
-    }
-    if ($searchFilters['program'] !== $filters['program']) {
-        $understoodParts[] = ['Program', $searchFilters['program']];
-    }
-    if ($searchFilters['year'] !== $filters['year']) {
-        $understoodParts[] = ['Year', (string) $searchFilters['year']];
-    }
-    if ($searchFilters['campus'] !== $filters['campus']) {
-        $understoodParts[] = ['Campus', $searchFilters['campus']];
-    }
-    if ($interpretation['sort'] !== null && !isset($_GET['sort'])) {
-        $understoodParts[] = ['Order', $interpretation['sort'] === 'newest' ? 'Newest first' : 'Oldest first'];
-    }
-}
-// link back to the same search without interpreting the sentence
-$exactWordsLink = 'index.php?' . ThesisSearch::queryString($filters, 1) . '&exact=1';
-// page links keep "exact words" when it was chosen
-$pageLinkSuffix = $exactWords ? '&exact=1' : '';
 
 $firstShown = 0;
 $lastShown = 0;
@@ -109,9 +51,7 @@ $isFiltered = $filters['q'] !== '' || $filters['year'] !== null || $filters['pro
 // AI relevance explanations are asked for only when words were typed and OPENROUTER_API_KEY / OPENROUTER_MODEL are set;
 // the page itself never calls OpenRouter: public/assets/search.js asks relevance.php once per result after the page shows,
 // so results and their scores appear at once and simply stay without an explanation if OpenRouter is unavailable
-// (a sentence with no topic left, such as "research conducted by IT", is only a filtered list, so there is nothing to explain)
-$hasTopic = $searchFilters['q'] !== '';
-$explainResults = $hasTopic && loadConfiguration()['openrouter']['enabled'];
+$explainResults = $filters['q'] !== '' && loadConfiguration()['openrouter']['enabled'];
 
 // shortens a long abstract for the results list without cutting a word in half
 // example: a 900-character abstract becomes its first ~280 characters followed by "..."
@@ -246,25 +186,11 @@ function keywordList(?string $keywords): array {
         </div>
     <?php endif; ?>
 
-    <?php if ($interpretation !== null): ?>
-        <!-- how the typed sentence was understood, with a way back to the visitor's exact words -->
-        <div class="understood small mb-3" role="status" data-understood>
-            <span class="understood-label">Searching for</span>
-            <?php if (count($understoodParts) === 0): ?>
-                <span class="understood-chip">all theses</span>
-            <?php endif; ?>
-            <?php foreach ($understoodParts as [$partLabel, $partValue]): ?>
-                <span class="understood-chip"><span class="text-secondary"><?= escapeHtml($partLabel) ?>:</span> <?= escapeHtml($partValue) ?></span>
-            <?php endforeach; ?>
-            <a href="<?= escapeHtml($exactWordsLink) ?>" class="ms-1 text-nowrap">Search your exact words instead</a>
-        </div>
-    <?php endif; ?>
-
     <?php if ($results['total'] === 0): ?>
         <!-- empty state with a suggestion, instead of a blank page -->
         <div class="alert alert-secondary">No theses match your search. Try fewer or different words, or clear the year, program and campus filters.</div>
     <?php else: ?>
-        <?php if ($hasTopic): ?>
+        <?php if ($filters['q'] !== ''): ?>
             <?php
             // the top results on this page that have an abstract, best first; only their abstracts go to the overview
             $overviewIds = [];
@@ -369,7 +295,7 @@ function keywordList(?string $keywords): array {
                 <ul class="pagination flex-wrap">
                     <?php for ($pageNumber = 1; $pageNumber <= $results['pages']; $pageNumber++): ?>
                         <li class="page-item <?php if ($pageNumber === $results['page']): ?>active<?php endif; ?>">
-                            <a class="page-link" href="index.php?<?= escapeHtml(ThesisSearch::queryString($filters, $pageNumber) . $pageLinkSuffix) ?>"><?= $pageNumber ?></a>
+                            <a class="page-link" href="index.php?<?= escapeHtml(ThesisSearch::queryString($filters, $pageNumber)) ?>"><?= $pageNumber ?></a>
                         </li>
                     <?php endfor; ?>
                 </ul>

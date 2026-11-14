@@ -626,13 +626,3 @@ At the user's request the RDPO sidebar moved from `templates/admin_sidebar.php` 
   through `admin_thesis_pdf.php` / `admin_thesis_viewer.php`, which require login and the `thesis.view_pdf` permission.
 - Tests: `php tests/unit_relevance_rules.php` (abstract-only request, answer guards) and `php tests/verify_file_protection.php`
   (unauthorized file access).
-
-## Searching with a sentence (added 2026-11-13)
-
-`Scholar\Search\QueryInterpreter` turns a sentence typed in the public search box into a topic plus the normal filters,
-with no AI call: "research conducted by IT" → program BS Information Technology; "find me a research related to flood
-monitoring" → topic "flood monitoring"; "in 2024" → year; "in Antipolo" → campus; "latest"/"oldest" → order.
-A program is only taken when the wording says who did the research ("by IT", "BSCS students", "from the Computer Science
-department"), so "IT security" or "nurse shift scheduling" stay topics. The page shows how it understood the sentence, with a
-"Search your exact words instead" link (`&exact=1`); words in "double quotes" are never interpreted. A dropdown the visitor sets
-always wins. Tests: `php tests/unit_query_rules.php`.
