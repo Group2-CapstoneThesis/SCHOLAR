@@ -132,11 +132,15 @@ Please make sure that anyone setting up or running this project follows these in
 
 4. Find the following configuration line:
 
-```powershell OPENROUTER_API_KEY= ```
+```powershell 
+OPENROUTER_API_KEY= 
+```
 
 5. Paste their personal API key after the equals sign:
 
-```powershell OPENROUTER_API_KEY=your_api_key_here ```
+```powershell 
+OPENROUTER_API_KEY=your_api_key_here 
+```
 
 6. Save the .env file and restart the application if necessary.
 
